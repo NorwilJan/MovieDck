@@ -1537,4 +1537,126 @@
         currentQuery = searchInput.value.trim();
         currentSearchType = searchType.value;
         if (currentQuery) {
-          currentMode = 'search';
+          currentMode = 'search';setActiveNav(currentMode);
+          document.getElementById('section-title').textContent = `Search Results for "${currentQuery}"`;
+          genreFilter.value = "";
+          yearFilter.value = "";
+          currentGenre = "";
+          currentYear = "";
+          populateGenreFilter();
+          resetInfiniteScroll();
+        } else {
+          switchMode('popular');
+        }
+      });
+
+      // Genre and Year filter handling
+      document.getElementById('genre-filter').addEventListener('change', (e) => {
+        currentGenre = e.target.value;
+        resetInfiniteScroll();
+      });
+
+      document.getElementById('year-filter').addEventListener('change', (e) => {
+        const selectedYear = e.target.value;
+        const currentYear = new Date().getFullYear();
+        if (selectedYear && (isNaN(selectedYear) || selectedYear < 1900 || selectedYear > currentYear)) {
+          alert(`Please select a valid year between 1900 and ${currentYear}.`);
+          e.target.value = "";
+          currentYear = "";
+        } else {
+          currentYear = selectedYear;
+        }
+        resetInfiniteScroll();
+      });
+
+      document.getElementById('clear-genre-btn').addEventListener('click', () => {
+        currentGenre = "";
+        currentYear = "";
+        genreFilter.value = "";
+        yearFilter.value = "";
+        resetInfiniteScroll();
+      });
+
+      // Navigation click handlers
+      document.getElementById('nav-home').addEventListener('click', () => switchMode('popular'));
+      document.getElementById('nav-movies').addEventListener('click', () => switchMode('popular'));
+      document.getElementById('nav-tvshows').addEventListener('click', () => switchMode('tv'));
+      document.getElementById('nav-anime').addEventListener('click', () => switchMode('anime'));
+      document.getElementById('nav-tagalog').addEventListener('click', () => switchMode('tagalog'));
+      document.getElementById('nav-netflix').addEventListener('click', () => {
+        netflixType = 'movie';
+        switchMode('netflix');
+      });
+      document.getElementById('nav-favorites').addEventListener('click', () => switchMode('favorites'));
+
+      // Share functionality
+      window.shareMovie = function() {
+        if (!lastModalMovie) return;
+        const shareData = {
+          title: lastModalMovie.title,
+          text: `Check out "${lastModalMovie.title}" on MovieDck!`,
+          url: window.location.href
+        };
+        if (navigator.share) {
+          navigator.share(shareData).catch(err => console.error('Share failed:', err));
+        } else {
+          navigator.clipboard.writeText(`${shareData.title}: ${shareData.url}`)
+            .then(() => alert('Link copied to clipboard!'))
+            .catch(err => console.error('Clipboard copy failed:', err));
+        }
+      };
+
+      window.shareTvShow = function() {
+        if (!tvModalData.tvId) return;
+        fetch(`https://api.themoviedb.org/3/tv/${tvModalData.tvId}?api_key=${apiKey}`)
+          .then(r => r.json())
+          .then(data => {
+            const shareData = {
+              title: data.name,
+              text: `Check out "${data.name}" on MovieDck!`,
+              url: window.location.href
+            };
+            if (navigator.share) {
+              navigator.share(shareData).catch(err => console.error('Share failed:', err));
+            } else {
+              navigator.clipboard.writeText(`${shareData.title}: ${shareData.url}`)
+                .then(() => alert('Link copied to clipboard!'))
+                .catch(err => console.error('Clipboard copy failed:', err));
+            }
+          });
+      };
+
+      // Keyboard accessibility
+      document.querySelectorAll('.movie-poster-wrapper').forEach(wrapper => {
+        wrapper.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            wrapper.querySelector('.play-btn-centered').click();
+          }
+        });
+      });
+
+      document.querySelectorAll('.favorite-btn').forEach(btn => {
+        btn.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            btn.click();
+          }
+        });
+      });
+
+      // Initial load
+      renderRecentlyViewed();
+      switchMode('popular');
+    });
+
+    // Prevent modal from closing when clicking inside modal-content
+    document.querySelectorAll('.modal-content').forEach(content => {
+      content.addEventListener('click', (e) => e.stopPropagation());
+    });
+
+    // Close modal when clicking outside
+    document.getElementById('modal').addEventListener('click', closeModal);
+  </script>
+</body>
+</html>
